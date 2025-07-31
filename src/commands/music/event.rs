@@ -75,7 +75,7 @@ impl EventHandler for OnEnd {
                     );
                 }
                 None => {
-                    serenity_utils::send_embed(
+                    let _ = serenity_utils::send_embed(
                         &self.ctx,
                         &self.msg,
                         "Next up is missing or unavailable",
@@ -102,7 +102,7 @@ impl EventHandler for OnPlayable {
             if let Some(meta) = metadata {
                 let title = meta.title.as_deref().unwrap_or("Unknown");
 
-                serenity_utils::send_embed(
+                let _ = serenity_utils::send_embed(
                     &self.ctx,
                     &self.msg,
                     &format!("🎵  Started playing {}", title),

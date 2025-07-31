@@ -1,10 +1,12 @@
-mod message; 
+mod message;
 
-use serenity::all::{ActivityData, ActivityType, OnlineStatus};
+use message::handle_message;
+use serenity::all::{ActivityData, ActivityType, Guild, OnlineStatus};
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready};
 use serenity::prelude::*;
-use message::handle_message;
+
+use crate::utils::serenity_utils;
 
 pub struct Handler;
 
@@ -24,7 +26,15 @@ impl EventHandler for Handler {
             }),
             OnlineStatus::Idle,
         );
-        
+
         tracing::info!("{} is online!", ready.user.name);
+    }
+
+    async fn guild_create(&self, ctx: Context, guild: Guild, is_new: Option<bool>) {
+        if let Some(true) = is_new {
+
+            let _ = serenity_utils::create_channel_from_guild(ctx, guild).await;
+
+        }
     }
 }

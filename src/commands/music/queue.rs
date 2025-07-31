@@ -23,6 +23,7 @@ pub struct VoiceChannelMusicState {
     pub queue: Vec<QueuedTrack>,
     pub now_playing: Option<(TrackHandle, Option<AuxMetadata>)>,
     pub index_playing: usize,
+    pub volume: f32,
 }
 
 pub struct QueuedTrack {
@@ -55,6 +56,7 @@ impl VoiceChannelMusicState {
             queue: Vec::new(),
             now_playing: None,
             index_playing: 0,
+            volume: 1.0,
         }
     }
 
@@ -72,7 +74,9 @@ impl VoiceChannelMusicState {
 
             let handle = handler.play_input(input);
 
+            let _ = handle.set_volume(self.volume);
             self.now_playing = Some((handle.clone(), metadata));
+            
             Some(handle)
         } else {
             None
@@ -93,17 +97,6 @@ impl VoiceChannelMusicState {
     pub fn get_current_track(&mut self) -> Option<&mut QueuedTrack> {
         self.queue.get_mut(self.index_playing)
     }
-
-    // pub async fn reset_state(&mut self) {
-    //     if let Some(call_state) = &self.call {
-    //         call_state.lock().await.stop();
-    //     };
-
-    //     self.index_playing = 0;
-    //     self.now_playing = None;
-    //     self.call = None;
-    //     self.queue.clear();
-    // }
 }
 
 impl QueuedTrack {

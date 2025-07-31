@@ -70,7 +70,7 @@ pub async fn join(ctx: Context, msg: Message) {
                             }
                         }
                         Err(_err) => {
-                            serenity_utils::send_embed(
+                            let _ = serenity_utils::send_embed(
                                 &ctx,
                                 &msg,
                                 "Failed to connect voice channel 😞",
@@ -82,7 +82,7 @@ pub async fn join(ctx: Context, msg: Message) {
                 }
             };
         } else {
-            serenity_utils::send_embed(&ctx, &msg, "You're not in voice channel", 0xFF0000).await;
+            let _ = serenity_utils::send_embed(&ctx, &msg, "You're not in voice channel", 0xFF0000).await;
         }
     };
 }
@@ -101,7 +101,7 @@ pub async fn leave(ctx: Context, msg: Message) {
     let guild_id = match msg.guild_id {
         Some(g) => g,
         None => {
-            serenity_utils::send_embed(&ctx, &msg, "Failed to get guild id 😞", 0xFF0000).await;
+            let _ = serenity_utils::send_embed(&ctx, &msg, "Failed to get guild id 😞", 0xFF0000).await;
             return;
         }
     };
