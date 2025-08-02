@@ -1,7 +1,7 @@
 use serenity::{
     all::{
-        ChannelType, CreateChannel, EditRole, Guild, GuildChannel, PermissionOverwrite,
-        PermissionOverwriteType, Permissions,
+        ChannelType, CreateChannel, CreateEmbedFooter, EditRole, Guild, GuildChannel, ImageHash,
+        PermissionOverwrite, PermissionOverwriteType, Permissions, User, UserId,
     },
     builder::{CreateEmbed, CreateMessage},
     client::Context,
@@ -15,6 +15,61 @@ pub async fn send_embed(
     color: u32,
 ) -> serenity::Result<Message> {
     let embed = CreateEmbed::default().description(description).color(color);
+
+    let builder = CreateMessage::default().embed(embed);
+    msg.channel_id.send_message(&ctx.http, builder).await
+}
+
+pub async fn send_track_embed(
+    ctx: &Context,
+    msg: &Message,
+    title: &str,
+    artist: &str,
+    duration: &u32,
+    thumbnail: &str,
+    cur_index: &str,
+    index: &str,
+    user: User,
+) -> serenity::Result<Message> {
+    let url_picture = match user.avatar {
+        Some(hash) => {
+            let hash_str = hash.to_string();
+            let ext = if hash.is_animated() { "gif" } else { "png" };
+            format!(
+                "https://cdn.discordapp.com/avatars/{}/{}.{}",
+                user.id, hash_str, ext
+            )
+        }
+        None => {
+            format!("https://cdn-icons-png.flaticon.com/512/747/747545.png")
+        }
+    };
+
+    let duration_str = {
+        let total_seconds = duration / 1000;
+        let hours = total_seconds / 3600;
+        let minutes = (total_seconds % 3600) / 60;
+        let seconds = total_seconds % 60;
+
+        if hours > 0 {
+            format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+        } else {
+            format!("{:02}:{:02}", minutes, seconds)
+        }
+    };
+
+    let embed = CreateEmbed::new()
+        .title("Added Track Queue")
+        .thumbnail(thumbnail)
+        .fields([
+            ("Track     ", title, true),
+            ("Artist    ", artist, true),
+            ("Track Length  ", &duration_str, true),
+            ("Current position", cur_index, true),
+            ("Position in queue", index, true),
+        ])
+        .footer(CreateEmbedFooter::new(format!("Requested by {}", user.name)).icon_url(url_picture))
+        .color(0x00AAFF);
 
     let builder = CreateMessage::default().embed(embed);
     msg.channel_id.send_message(&ctx.http, builder).await
@@ -183,7 +238,6 @@ pub async fn create_channel_from_id(
                             kind: PermissionOverwriteType::Role(allowed_role.id),
                         },
                     ]),
-                    
             )
             .await?
     } else {

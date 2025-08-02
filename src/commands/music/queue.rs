@@ -83,7 +83,7 @@ impl VoiceChannelMusicState {
         }
     }
 
-    pub async fn add_track(&mut self, url: String, client: Client) {
+    pub async fn add_track(&mut self, url: String, client: Client) -> usize {
         let mut track = QueuedTrack {
             url: url.clone(),
             resolved: None,
@@ -92,6 +92,8 @@ impl VoiceChannelMusicState {
         track.preload(client).await;
 
         self.queue.push(track);
+        
+        self.queue.iter().position(|q| q.url == url).unwrap_or(0) + 1
     }
 
     pub fn get_current_track(&mut self) -> Option<&mut QueuedTrack> {

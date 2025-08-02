@@ -32,7 +32,7 @@ pub async fn run(ctx: Context, msg: Message, registry: TokenRegistry) {
                 Some(media)
             }
             Ok(None) => {
-                let _  = serenity_utils::send_embed(
+                let _ = serenity_utils::send_embed(
                     &ctx,
                     &msg,
                     "Could not find the provided song",
@@ -43,7 +43,8 @@ pub async fn run(ctx: Context, msg: Message, registry: TokenRegistry) {
             }
             Err(e) => {
                 tracing::error!("Error while fetching media: {:?}", e);
-                let _ = serenity_utils::send_embed(&ctx, &msg, "Failed to load track 😞", 0xFF0000).await;
+                let _ = serenity_utils::send_embed(&ctx, &msg, "Failed to load track 😞", 0xFF0000)
+                    .await;
                 None
             }
         };
@@ -107,7 +108,29 @@ pub async fn run(ctx: Context, msg: Message, registry: TokenRegistry) {
                     .get_mut(&guild_id)
                     .and_then(|session| Some(&mut session.voice_state))
                 {
-                    channel_state.add_track(url, http_client.clone()).await;
+                    let index = channel_state.add_track(url, http_client.clone()).await;
+
+                    let _ = serenity_utils::send_track_embed(
+                        &ctx,
+                        &msg,
+                        &track_item.name,
+                        &track_item
+                            .artists
+                            .get(0)
+                            .map(|a| a.name.to_owned())
+                            .unwrap_or("unknown".to_owned()),
+                        &track_item.duration_ms,
+                        &track_item
+                            .album
+                            .images
+                            .get(0)
+                            .map(|a| a.url.clone())
+                            .unwrap_or("".to_owned()),
+                        &(channel_state.index_playing + 1).to_string(),
+                        &index.to_string(),
+                        msg.author.clone(),
+                    )
+                    .await;
 
                     if let Some(call) = channel_state.call.clone() {
                         if channel_state.now_playing.is_none() {
@@ -181,7 +204,7 @@ pub async fn pause(ctx: Context, msg: Message) {
         if let Some((track_handle, _)) = &mut channel_state.now_playing {
             let _ = track_handle.pause();
 
-            let _  = serenity_utils::send_embed(
+            let _ = serenity_utils::send_embed(
                 &ctx,
                 &msg,
                 &format!("⏸️ The current song has been paused"),
@@ -219,13 +242,14 @@ pub async fn resume(ctx: Context, msg: Message) {
         if let Some((track_handle, _)) = &mut channel_state.now_playing {
             let _ = track_handle.play();
 
-            let _ = serenity_utils::send_embed(&ctx, &msg, &format!("▶️ Back to the music"), 0x6C757D)
-                .await;
+            let _ =
+                serenity_utils::send_embed(&ctx, &msg, &format!("▶️ Back to the music"), 0x6C757D)
+                    .await;
         } else {
             return;
         }
     } else {
-       let _ =  serenity_utils::send_embed(&ctx, &msg, "Failed to get server😞", 0xFF0000).await;
+        let _ = serenity_utils::send_embed(&ctx, &msg, "Failed to get server😞", 0xFF0000).await;
     };
 }
 
