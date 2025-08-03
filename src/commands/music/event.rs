@@ -17,13 +17,6 @@ pub struct OnEnd {
     pub shared_state: Weak<Mutex<BotMusicState>>,
 }
 
-pub struct OnPlayable {
-    pub ctx: serenity::all::Context,
-    pub msg: serenity::all::Message,
-    pub guild_id: serenity::all::GuildId,
-    pub shared_state: Weak<Mutex<BotMusicState>>,
-}
-
 pub struct OnDisconnect {
     pub ctx: serenity::all::Context,
     pub msg: serenity::all::Message,
@@ -46,6 +39,7 @@ impl EventHandler for OnEnd {
             channel.now_playing = None;
             channel.index_playing += 1;
 
+
             let track_handle = channel.playing_track().await;
 
             match track_handle {
@@ -63,16 +57,6 @@ impl EventHandler for OnEnd {
                             shared_state: shared_state.clone(),
                         },
                     );
-
-                    let _ = handle.add_event(
-                        songbird::Event::Track(TrackEvent::Playable),
-                        OnPlayable {
-                            ctx: self.ctx.clone(),
-                            msg: self.msg.clone(),
-                            guild_id: self.guild_id.clone(),
-                            shared_state: shared_state.clone(),
-                        },
-                    );
                 }
                 None => {
                     let _ = serenity_utils::send_embed(
@@ -85,33 +69,6 @@ impl EventHandler for OnEnd {
                 }
             }
         }
-        None
-    }
-}
-
-#[async_trait]
-impl EventHandler for OnPlayable {
-    async fn act(&self, _e_ctx: &EventContext<'_>) -> Option<Event> {
-        let shared_arc = self.shared_state.upgrade()?;
-        let mut shared = shared_arc.lock().await;
-        let guild = shared.music_sessions.get_mut(&self.guild_id)?;
-
-        let channel = &mut guild.voice_state;
-
-        if let Some((_, metadata)) = &channel.now_playing {
-            if let Some(meta) = metadata {
-                let title = meta.title.as_deref().unwrap_or("Unknown");
-
-                let _ = serenity_utils::send_embed(
-                    &self.ctx,
-                    &self.msg,
-                    &format!("🎵  Started playing {}", title),
-                    0x6C757D,
-                )
-                .await;
-            }
-        }
-
         None
     }
 }

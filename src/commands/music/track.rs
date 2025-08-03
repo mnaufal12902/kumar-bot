@@ -8,7 +8,7 @@ use crate::{
     bot::{HttpKey, MusicStateKey},
     commands::{
         self,
-        music::event::{OnEnd, OnPlayable},
+        music::event::OnEnd,
     },
     models::spotify::SpotifyTrackItem,
     token::registry::TokenRegistry,
@@ -148,16 +148,6 @@ pub async fn run(ctx: Context, msg: Message, registry: TokenRegistry) {
                                             msg: msg.clone(),
                                             guild_id: guild_id.clone(),
                                             call: call_shared,
-                                            shared_state: shared_state.clone(),
-                                        },
-                                    );
-
-                                    let _ = handle.add_event(
-                                        songbird::Event::Track(TrackEvent::Playable),
-                                        OnPlayable {
-                                            ctx: ctx.clone(),
-                                            msg: msg.clone(),
-                                            guild_id: guild_id.clone(),
                                             shared_state: shared_state.clone(),
                                         },
                                     );

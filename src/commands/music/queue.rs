@@ -2,10 +2,14 @@ use reqwest::Client;
 use serenity::all::{ChannelId, GuildId};
 use songbird::{
     Call,
-    input::{AuxMetadata, Input, YoutubeDl},
+    input::{
+        AuxMetadata, Input, YoutubeDl,
+        codecs::{CODEC_REGISTRY, PROBE},
+    },
     tracks::TrackHandle,
 };
 use std::{collections::HashMap, sync::Arc};
+use symphonia::core::{codecs::CODEC_TYPE_OPUS, probe::Probe};
 use tokio::sync::Mutex;
 
 pub struct BotMusicState {
@@ -76,7 +80,7 @@ impl VoiceChannelMusicState {
 
             let _ = handle.set_volume(self.volume);
             self.now_playing = Some((handle.clone(), metadata));
-            
+
             Some(handle)
         } else {
             None
@@ -89,10 +93,13 @@ impl VoiceChannelMusicState {
             resolved: None,
         };
 
-        track.preload(client).await;
+        match self.now_playing {
+            Some(_) => track.preload(client, true).await,
+            None => track.preload(client, false).await,
+        };
 
         self.queue.push(track);
-        
+
         self.queue.iter().position(|q| q.url == url).unwrap_or(0) + 1
     }
 
@@ -102,14 +109,27 @@ impl VoiceChannelMusicState {
 }
 
 impl QueuedTrack {
-    pub async fn preload(&mut self, client: Client) {
+    pub async fn preload(&mut self, client: Client, is_preload: bool) {
         if self.resolved.is_none() {
             let input = Input::from(YoutubeDl::new(client, self.url.clone()).user_args(vec![
                 "--no-playlist".into(),
                 "-f".into(),
                 "bestaudio[acodec=opus]/bestaudio".into(),
             ]));
-            self.resolved = Some(input);
+
+            match is_preload {
+                true => match input.make_playable_async(&CODEC_REGISTRY, &PROBE).await {
+                    Ok(i) => {
+                        tracing::info!("Preload song");
+                        self.resolved = Some(i)
+                    }
+                    Err(err) => {
+                        tracing::error!("Error : {}", err);
+                        self.resolved = None
+                    }
+                },
+                false => self.resolved = Some(input),
+            }
         }
     }
 
